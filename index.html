@@ -15,10 +15,19 @@
         </div>
         <div class="inline-flex items-center gap-3 text-xs text-slate-300">
           <div class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1">
-            <span id="liveDot" class="inline-block h-2 w-2 rounded-full bg-rose-400"></span>
-            <span>Live Status:</span>
-            <span id="liveText" class="text-slate-300">Checking...</span>
+            <span id="sfDot" class="inline-block h-2 w-2 rounded-full bg-slate-600"></span>
+            <span class="text-slate-300">SiliconFlow</span>
+            <span id="sfLatency" class="text-slate-400 font-mono">N/A</span>
           </div>
+          <div class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1">
+            <span id="gqDot" class="inline-block h-2 w-2 rounded-full bg-slate-600"></span>
+            <span class="text-slate-300">Groq</span>
+            <span id="gqLatency" class="text-slate-400 font-mono">N/A</span>
+          </div>
+          <button id="btnTest" class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-4 py-1 hover:bg-slate-800" type="button">
+            <span id="btnSpin" class="hidden h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent"></span>
+            <span class="text-slate-300">Test Latency</span>
+          </button>
           <div class="text-slate-400">
             Gateway: <span class="font-mono">Project Shell V2</span>
           </div>
@@ -107,33 +116,34 @@
     <script>
       (function () {
         function qs(id) { return document.getElementById(id); }
-        var liveDot = qs('liveDot');
-        var liveText = qs('liveText');
+        var sfDot = qs('sfDot');
+        var gqDot = qs('gqDot');
+        var sfLatency = qs('sfLatency');
+        var gqLatency = qs('gqLatency');
+        var btnTest = qs('btnTest');
+        var btnSpin = qs('btnSpin');
         var toast = qs('toast');
 
-        function setLive(ok, detail) {
-          if (ok) {
-            liveDot.className = 'inline-block h-2 w-2 rounded-full bg-emerald-400';
-            liveText.textContent = 'Free-Pool Ready';
-            liveText.title = detail || '';
-          } else {
-            liveDot.className = 'inline-block h-2 w-2 rounded-full bg-rose-400';
-            liveText.textContent = 'Free-Pool Missing Key';
-            liveText.title = detail || '';
-          }
+        function setLamp(dotEl, latencyEl, ready, latency) {
+          dotEl.className = 'inline-block h-2 w-2 rounded-full ' + (ready ? 'bg-emerald-400' : 'bg-rose-400');
+          latencyEl.textContent = latency || 'N/A';
         }
 
-        function check() {
-          fetch('/api.php/v1.parse/pool_status', { cache: 'no-store' })
+        function check(force) {
+          var url = '/api.php/v1.parse/pool_status';
+          if (force) url += '?force=1';
+          fetch(url, { cache: 'no-store' })
             .then(function (r) { return r.json(); })
             .then(function (j) {
               var d = j && j.data ? j.data : {};
-              var ok = !!d.free_pool_ready;
-              var detail = 'siliconflow=' + (d.siliconflow_ready ? 'on' : 'off') + ', groq=' + (d.groq_ready ? 'on' : 'off') + ', premium=' + (d.premium_ready ? 'on' : 'off');
-              setLive(ok, detail);
+              var sf = d.siliconflow || {};
+              var gq = d.groq || {};
+              setLamp(sfDot, sfLatency, !!sf.ready, sf.latency);
+              setLamp(gqDot, gqLatency, !!gq.ready, gq.latency);
             })
             .catch(function () {
-              setLive(false, 'status_check_failed');
+              setLamp(sfDot, sfLatency, false, 'N/A');
+              setLamp(gqDot, gqLatency, false, 'N/A');
             });
         }
 
@@ -173,8 +183,17 @@
           if (id) copyFrom(id);
         });
 
-        check();
-        setInterval(check, 15000);
+        if (btnTest) {
+          btnTest.addEventListener('click', function () {
+            if (btnSpin) btnSpin.classList.remove('hidden');
+            check(true);
+            setTimeout(function () { if (btnSpin) btnSpin.classList.add('hidden'); }, 1200);
+          });
+        }
+
+        // Background poller uses cached result
+        check(false);
+        setInterval(function () { check(false); }, 15000);
       })();
     </script>
   </body>

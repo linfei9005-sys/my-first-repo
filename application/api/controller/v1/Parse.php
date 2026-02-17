@@ -209,19 +209,82 @@ class Parse extends Base
             ], 405);
         }
 
-        $sf = $this->getSiliconFlowApiKey() !== '';
-        $gq = $this->getGroqApiKey() !== '';
-        $premium = $this->getDeepSeekApiKey() !== '';
+        // 30s cache by default to reduce token cost; force=1 triggers real-time checks
+        $force = (string)$this->getParam('force', '');
+        $force = ($force === '1' || strtolower($force) === 'true');
 
-        $this->respondJson([
-            'ok' => true,
-            'data' => [
-                'free_pool_ready' => ($sf || $gq),
-                'siliconflow_ready' => $sf,
-                'groq_ready' => $gq,
-                'premium_ready' => $premium,
-            ],
-        ], 200);
+        $cacheKey = 'ps_pool_status_v2';
+        if (!$force) {
+            $cached = Cache::get($cacheKey);
+            if (is_array($cached)) {
+                $this->respondJson(['ok' => true, 'data' => $cached], 200);
+            }
+        }
+
+        $sf = $this->pingProvider('siliconflow');
+        $gq = $this->pingProvider('groq');
+
+        $data = [
+            'siliconflow' => $sf,
+            'groq' => $gq,
+        ];
+        Cache::set($cacheKey, $data, 30);
+
+        $this->respondJson(['ok' => true, 'data' => $data], 200);
+    }
+
+    private function pingProvider($provider)
+    {
+        $provider = strtolower(trim((string)$provider));
+        $t0 = microtime(true);
+
+        if ($provider === 'siliconflow') {
+            $key = $this->getSiliconFlowApiKey();
+            if ($key === '') {
+                return ['ready' => false, 'latency' => 'N/A'];
+            }
+            $endpoint = $this->getSiliconFlowBaseUrl() . '/chat/completions';
+            $model = $this->getSiliconFlowModel();
+            $r = $this->callOpenAICompatChat(
+                $endpoint,
+                $key,
+                $model,
+                'ping',
+                'Output ONLY {"pong":true} as a JSON object.',
+                16,
+                6
+            );
+            if (!empty($r['ok'])) {
+                $ms = (int)round((microtime(true) - $t0) * 1000);
+                return ['ready' => true, 'latency' => $ms . 'ms'];
+            }
+            return ['ready' => false, 'latency' => 'N/A'];
+        }
+
+        if ($provider === 'groq') {
+            $key = $this->getGroqApiKey();
+            if ($key === '') {
+                return ['ready' => false, 'latency' => 'N/A'];
+            }
+            $endpoint = $this->getGroqBaseUrl() . '/chat/completions';
+            $model = $this->getGroqModel();
+            $r = $this->callOpenAICompatChat(
+                $endpoint,
+                $key,
+                $model,
+                'ping',
+                'Output ONLY {"pong":true} as a JSON object.',
+                16,
+                6
+            );
+            if (!empty($r['ok'])) {
+                $ms = (int)round((microtime(true) - $t0) * 1000);
+                return ['ready' => true, 'latency' => $ms . 'ms'];
+            }
+            return ['ready' => false, 'latency' => 'N/A'];
+        }
+
+        return ['ready' => false, 'latency' => 'N/A'];
     }
 
     /**
@@ -703,7 +766,7 @@ class Parse extends Base
      * OpenAI-compatible Chat Completions (curl).
      * 强制：response_format => {type: json_object}，并对 message.content 二次 json_decode 确保纯净 JSON。
      */
-    private function callOpenAICompatChat($endpoint, $apiKey, $model, $raw_text, $instruction)
+    private function callOpenAICompatChat($endpoint, $apiKey, $model, $raw_text, $instruction, $maxTokens = null, $timeoutSeconds = null)
     {
         $payload = [
             'model' => $model,
@@ -714,6 +777,9 @@ class Parse extends Base
                 ['role' => 'user', 'content' => (string)$raw_text],
             ],
         ];
+        if ($maxTokens !== null && is_numeric($maxTokens) && (int)$maxTokens > 0) {
+            $payload['max_tokens'] = (int)$maxTokens;
+        }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE);
         if (!is_string($body)) {
             return ['ok' => false, 'error_message' => 'json_encode request failed', 'model' => $model];
@@ -734,7 +800,8 @@ class Parse extends Base
         curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        $timeoutSeconds = ($timeoutSeconds !== null && is_numeric($timeoutSeconds) && (int)$timeoutSeconds > 0) ? (int)$timeoutSeconds : 20;
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSeconds);
         $raw = curl_exec($ch);
         $curlErr = curl_error($ch);
         $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
