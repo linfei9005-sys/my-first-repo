@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Project Shell: Global Free Data Normalization API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="max-w-5xl mx-auto px-6 py-10">
+      <div class="flex items-center justify-between gap-4">
+        <div class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1 text-xs">
+          <span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span>Service Status: Online</span>
+        </div>
+        <div class="inline-flex items-center gap-3 text-xs text-slate-300">
+          <div class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1">
+            <span id="liveDot" class="inline-block h-2 w-2 rounded-full bg-rose-400"></span>
+            <span>Live Status:</span>
+            <span id="liveText" class="text-slate-300">Checking...</span>
+          </div>
+          <div class="text-slate-400">
+            Gateway: <span class="font-mono">Project Shell V2</span>
+          </div>
+        </div>
+      </div>
+
+      <h1 class="mt-8 text-4xl font-semibold tracking-tight">
+        Project Shell: Global Free Data Normalization API
+      </h1>
+      <p class="mt-3 text-slate-300">
+        免费引流池（SiliconFlow + Groq）+ 可选 Premium Core（官方 DeepSeek）。
+      </p>
+
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+          <div class="text-sm text-slate-400">Supported Modes</div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">auto</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">ecom</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">news</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">social</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">deepseek</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">json</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">query</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">kv</span>
+            <span class="px-2 py-1 rounded-lg bg-slate-800 text-xs font-mono">csv</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+          <div class="text-sm text-slate-400">Endpoints</div>
+          <div class="mt-3 space-y-2 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-300">Parse</span>
+              <span class="font-mono text-slate-200">/api.php/v1.parse</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-300">Health</span>
+              <span class="font-mono text-slate-200">/api.php/v1.parse/health</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-300">Admin Stats</span>
+              <span class="font-mono text-slate-200">/api.php/v1.stats</span>
+            </div>
+          </div>
+          <div class="mt-3 text-xs text-slate-500">
+            ThinkPHP 子目录控制器使用点号访问：<span class="font-mono">v1.parse</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+          <div class="text-sm text-slate-400">Free Pool (No Key)</div>
+          <div class="mt-3 flex items-center justify-between gap-3">
+            <div class="text-xs text-slate-500">Chinese sample (routes to SiliconFlow by default)</div>
+            <button class="text-xs px-3 py-1 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800"
+                    data-copy="curlCn">Copy</button>
+          </div>
+          <pre class="mt-2 text-xs overflow-auto rounded-xl bg-slate-950 border border-slate-800 p-4"><code id="curlCn">curl -sS "http://38.14.74.125/api.php/v1.parse" \
+  --data-urlencode "mode=ecom" \
+  --data-urlencode "data=京东：蓝牙耳机Pro 现价￥199 规格：Type-C快充 卖点：降噪/低延迟"</code></pre>
+
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <div class="text-xs text-slate-500">English sample (routes to Groq by default)</div>
+            <button class="text-xs px-3 py-1 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800"
+                    data-copy="curlEn">Copy</button>
+          </div>
+          <pre class="mt-2 text-xs overflow-auto rounded-xl bg-slate-950 border border-slate-800 p-4"><code id="curlEn">curl -sS "http://38.14.74.125/api.php/v1.parse" \
+  --data-urlencode "mode=news" \
+  --data-urlencode "data=&lt;h1&gt;Central bank signals rate cut as inflation cools&lt;/h1&gt;"</code></pre>
+          <div class="mt-3 text-xs text-slate-500">
+            Premium: add header <span class="font-mono text-slate-200">Authorization: Bearer &lt;API_KEY&gt;</span> to use official DeepSeek.
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-10 flex items-center justify-between flex-wrap gap-4 text-xs text-slate-500">
+        <div>Payments: <span class="text-slate-200">USDT (TRC-20) Only</span>. Contact for API Key.</div>
+        <div class="font-mono">X-PS-VHOST: 38.14.74.125</div>
+      </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden rounded-full border border-slate-700 bg-slate-900/90 px-4 py-2 text-xs text-slate-100 shadow-lg">
+      Copied
+    </div>
+
+    <script>
+      (function () {
+        function qs(id) { return document.getElementById(id); }
+        var liveDot = qs('liveDot');
+        var liveText = qs('liveText');
+        var toast = qs('toast');
+
+        function setLive(ok, detail) {
+          if (ok) {
+            liveDot.className = 'inline-block h-2 w-2 rounded-full bg-emerald-400';
+            liveText.textContent = 'Free-Pool Ready';
+            liveText.title = detail || '';
+          } else {
+            liveDot.className = 'inline-block h-2 w-2 rounded-full bg-rose-400';
+            liveText.textContent = 'Free-Pool Missing Key';
+            liveText.title = detail || '';
+          }
+        }
+
+        function check() {
+          fetch('/api.php/v1.parse/pool_status', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              var d = j && j.data ? j.data : {};
+              var ok = !!d.free_pool_ready;
+              var detail = 'siliconflow=' + (d.siliconflow_ready ? 'on' : 'off') + ', groq=' + (d.groq_ready ? 'on' : 'off') + ', premium=' + (d.premium_ready ? 'on' : 'off');
+              setLive(ok, detail);
+            })
+            .catch(function () {
+              setLive(false, 'status_check_failed');
+            });
+        }
+
+        function showToast(msg) {
+          toast.textContent = msg || 'Copied';
+          toast.classList.remove('hidden');
+          clearTimeout(showToast._t);
+          showToast._t = setTimeout(function () { toast.classList.add('hidden'); }, 1200);
+        }
+
+        function copyFrom(id) {
+          var el = qs(id);
+          if (!el) return;
+          // Use textContent so &lt;...&gt; becomes "<...>"
+          var text = el.textContent || '';
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              showToast('Copied');
+            }).catch(function () {
+              showToast('Copy failed');
+            });
+            return;
+          }
+          // Fallback
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); showToast('Copied'); } catch (e) { showToast('Copy failed'); }
+          document.body.removeChild(ta);
+        }
+
+        document.addEventListener('click', function (e) {
+          var t = e.target;
+          if (!t || !t.getAttribute) return;
+          var id = t.getAttribute('data-copy');
+          if (id) copyFrom(id);
+        });
+
+        check();
+        setInterval(check, 15000);
+      })();
+    </script>
+  </body>
+</html>
+
